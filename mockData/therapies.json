@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Abhyanga",
+    "description": "Full body oil massage",
+    "duration": 60,
+    "gender_restricted": true,
+    "category": "Snehana"
+  },
+  {
+    "name": "Shirodhara",
+    "description": "Continuous flow of medicated oil on forehead",
+    "duration": 45,
+    "gender_restricted": false,
+    "category": "Shiro Chikitsa"
+  },
+  {
+    "name": "Basti",
+    "description": "Medicated enema therapy",
+    "duration": 90,
+    "gender_restricted": true,
+    "category": "Panchakarma"
+  },
+  {
+    "name": "Nasya",
+    "description": "Nasal administration of medicated oils",
+    "duration": 30,
+    "gender_restricted": false,
+    "category": "Panchakarma"
+  },
+  {
+    "name": "Swedana",
+    "description": "Herbal steam therapy",
+    "duration": 45,
+    "gender_restricted": false,
+    "category": "Svedana"
+  },
+  {
+    "name": "Udvartana",
+    "description": "Powder massage therapy",
+    "duration": 60,
+    "gender_restricted": true,
+    "category": "Snehana"
+  }
+]

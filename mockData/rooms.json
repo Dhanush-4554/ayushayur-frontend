@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Room 101",
+    "room_type": "Panchakarma",
+    "capacity": 1,
+    "status": "available",
+    "facilities": ["AC", "Attached Bathroom", "Therapy Bed"]
+  },
+  {
+    "name": "Room 102",
+    "room_type": "Panchakarma",
+    "capacity": 1,
+    "status": "available",
+    "facilities": ["AC", "Attached Bathroom", "Therapy Bed"]
+  },
+  {
+    "name": "Room 103",
+    "room_type": "General Therapy",
+    "capacity": 1,
+    "status": "available",
+    "facilities": ["AC", "Attached Bathroom", "Therapy Bed"]
+  },
+  {
+    "name": "Room 104",
+    "room_type": "General Therapy",
+    "capacity": 1,
+    "status": "available",
+    "facilities": ["AC", "Attached Bathroom", "Therapy Bed"]
+  }
+]

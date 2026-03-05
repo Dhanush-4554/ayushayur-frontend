@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Dr. Anil Sharma",
+    "gender": "Male",
+    "specialization": "Panchakarma",
+    "experience_years": 15,
+    "qualification": "BAMS, MD (Ayurveda)",
+    "phone": "+91 98765 11111",
+    "email": "anil.sharma@ayursutra.com"
+  },
+  {
+    "name": "Dr. Meera Nair",
+    "gender": "Female",
+    "specialization": "Skin & Digestive Disorders",
+    "experience_years": 12,
+    "qualification": "BAMS, MD (Ayurveda)",
+    "phone": "+91 98765 22222",
+    "email": "meera.nair@ayursutra.com"
+  },
+  {
+    "name": "Dr. Rajan Patel",
+    "gender": "Male",
+    "specialization": "Respiratory & General Medicine",
+    "experience_years": 10,
+    "qualification": "BAMS, MD (Ayurveda)",
+    "phone": "+91 98765 33333",
+    "email": "rajan.patel@ayursutra.com"
+  },
+  {
+    "name": "Dr. Priya Menon",
+    "gender": "Female",
+    "specialization": "Mental Health & Wellness",
+    "experience_years": 8,
+    "qualification": "BAMS, MD (Ayurveda)",
+    "phone": "+91 98765 44444",
+    "email": "priya.menon@ayursutra.com"
+  }
+]

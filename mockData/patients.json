@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Rajesh Kumar",
+    "age": 45,
+    "gender": "Male",
+    "phone": "+91 98765 43210",
+    "email": "rajesh.kumar@example.com",
+    "address": "123 Main Street, Mumbai",
+    "blood_group": "O+",
+    "emergency_contact": "+91 98765 43211",
+    "admission_date": "2024-01-05",
+    "diagnosis": "Vata-Pitta Imbalance, Chronic Lower Back Pain",
+    "chief_complaint": "Lower back pain for 6 months",
+    "treating_doctor": "Dr. Anil Sharma"
+  },
+  {
+    "name": "Priya Sharma",
+    "age": 32,
+    "gender": "Female",
+    "phone": "+91 87654 32109",
+    "email": "priya.sharma@example.com",
+    "address": "456 Park Avenue, Delhi",
+    "blood_group": "A+",
+    "emergency_contact": "+91 87654 32110",
+    "admission_date": "2024-01-08",
+    "diagnosis": "Pitta-Kapha Imbalance, Skin Disorders, Digestive Issues",
+    "chief_complaint": "Skin rashes and digestive problems",
+    "treating_doctor": "Dr. Meera Nair"
+  },
+  {
+    "name": "Amit Verma",
+    "age": 38,
+    "gender": "Male",
+    "phone": "+91 76543 21098",
+    "email": "amit.verma@example.com",
+    "address": "789 Garden Road, Bangalore",
+    "blood_group": "B+",
+    "emergency_contact": "+91 76543 21099",
+    "admission_date": "2024-01-10",
+    "diagnosis": "Kapha Imbalance, Respiratory Issues",
+    "chief_complaint": "Chronic cough and congestion",
+    "treating_doctor": "Dr. Rajan Patel"
+  },
+  {
+    "name": "Sunita Devi",
+    "age": 28,
+    "gender": "Female",
+    "phone": "+91 65432 10987",
+    "email": "sunita.devi@example.com",
+    "address": "321 Temple Street, Pune",
+    "blood_group": "AB+",
+    "emergency_contact": "+91 65432 10988",
+    "admission_date": "2024-01-12",
+    "diagnosis": "Vata Imbalance, Anxiety and Insomnia",
+    "chief_complaint": "Sleep disorders and anxiety",
+    "treating_doctor": "Dr. Priya Menon"
+  }
+]

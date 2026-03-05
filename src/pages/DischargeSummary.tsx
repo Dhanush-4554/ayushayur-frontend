@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
-import { FileText, Download, Printer, User, Calendar, Activity, Utensils, ArrowRight } from "lucide-react";
+import { FileText, Download, Printer, Loader2, AlertTriangle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -13,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DischargePrintView } from "@/components/discharge/DischargePrintView";
+import { patientsAPI, prakritiAPI, treatmentJourneyAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 interface PatientData {
   id: number;
@@ -36,91 +39,151 @@ interface PatientData {
   followUp: string;
 }
 
-const patientsData: PatientData[] = [
-  {
-    id: 1,
-    name: "Rajesh Kumar",
-    age: 45,
-    gender: "Male",
-    contact: "+91 98765 43210",
-    bloodGroup: "O+",
-    admissionDate: "2024-01-05",
-    dischargeDate: "2024-01-12",
-    diagnosis: "Vata-Pitta Imbalance, Chronic Lower Back Pain",
-    treatingDoctor: "Dr. Anil Sharma",
-    initialPrakriti: { vata: 55, pitta: 30, kapha: 15 },
-    finalPrakriti: { vata: 38, pitta: 35, kapha: 27 },
-    treatmentPlan: [
-      { day: 1, therapy: "Snehapana (Internal Oleation)", completed: true },
-      { day: 2, therapy: "Snehapana (Increased dose)", completed: true },
-      { day: 3, therapy: "Abhyanga + Swedana", completed: true },
-      { day: 4, therapy: "Kati Basti", completed: true },
-      { day: 5, therapy: "Virechana (Purgation)", completed: true },
-      { day: 6, therapy: "Samsarjana Krama Day 1", completed: true },
-      { day: 7, therapy: "Samsarjana Krama Day 2", completed: true },
-    ],
-    dietAdvice: [
-      "Follow Vata-pacifying diet for 2 weeks",
-      "Prefer warm, cooked, moist foods",
-      "Avoid cold, raw, and dry foods",
-      "Include ghee, sesame oil in cooking",
-      "Drink warm water throughout the day",
-      "Have dinner before 7 PM",
-      "Avoid caffeine and carbonated drinks",
-    ],
-    followUp: "Follow-up consultation after 2 weeks. Continue prescribed Ashwagandha Churna and Dhanwantaram Tailam for external application.",
-  },
-  {
-    id: 2,
-    name: "Priya Sharma",
-    age: 32,
-    gender: "Female",
-    contact: "+91 87654 32109",
-    bloodGroup: "A+",
-    admissionDate: "2024-01-08",
-    dischargeDate: "2024-01-22",
-    diagnosis: "Pitta-Kapha Imbalance, Skin Disorders, Digestive Issues",
-    treatingDoctor: "Dr. Meera Nair",
-    initialPrakriti: { vata: 20, pitta: 50, kapha: 30 },
-    finalPrakriti: { vata: 28, pitta: 38, kapha: 34 },
-    treatmentPlan: [
-      { day: 1, therapy: "Deepana-Pachana", completed: true },
-      { day: 2, therapy: "Snehapana Day 1", completed: true },
-      { day: 3, therapy: "Snehapana Day 2", completed: true },
-      { day: 4, therapy: "Snehapana Day 3", completed: true },
-      { day: 5, therapy: "Abhyanga + Swedana", completed: true },
-      { day: 6, therapy: "Virechana", completed: true },
-      { day: 7, therapy: "Rest Day", completed: true },
-      { day: 8, therapy: "Samsarjana Krama Day 1", completed: true },
-      { day: 9, therapy: "Samsarjana Krama Day 2", completed: true },
-      { day: 10, therapy: "Samsarjana Krama Day 3", completed: true },
-      { day: 11, therapy: "Takradhara", completed: true },
-      { day: 12, therapy: "Takradhara", completed: true },
-      { day: 13, therapy: "Lepam Treatment", completed: true },
-      { day: 14, therapy: "Final Assessment", completed: true },
-    ],
-    dietAdvice: [
-      "Follow Pitta-pacifying diet for 3 weeks",
-      "Prefer cooling foods like cucumber, coconut",
-      "Avoid spicy, sour, and fermented foods",
-      "Include bitter gourd, neem in diet",
-      "Drink cooling herbal teas",
-      "Avoid direct sun exposure",
-      "Practice stress management techniques",
-    ],
-    followUp: "Monthly follow-up for 3 months. Continue Triphala Churna at bedtime.",
-  },
-];
-
 export default function DischargeSummary() {
   const [selectedPatientId, setSelectedPatientId] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
-  const selectedPatient = patientsData.find(p => p.id.toString() === selectedPatientId);
+  const { data: patients = [], isLoading: loadingPatients } = useQuery({
+    queryKey: ["patients"],
+    queryFn: async () => {
+      try {
+        return await patientsAPI.getAll();
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load patients");
+        return [];
+      }
+    },
+  });
+
+  const { data: prakritiAssessments = [], isLoading: loadingPrakriti } = useQuery({
+    queryKey: ["prakriti", selectedPatientId],
+    queryFn: async () => {
+      if (!selectedPatientId) return [];
+      try {
+        return await prakritiAPI.getAll(selectedPatientId);
+      } catch (error: any) {
+        return [];
+      }
+    },
+    enabled: !!selectedPatientId,
+  });
+
+  const { data: treatmentJourney = [], isLoading: loadingJourney } = useQuery({
+    queryKey: ["treatment-journey", selectedPatientId],
+    queryFn: async () => {
+      if (!selectedPatientId) return [];
+      try {
+        return await treatmentJourneyAPI.getAll(selectedPatientId);
+      } catch (error: any) {
+        return [];
+      }
+    },
+    enabled: !!selectedPatientId,
+  });
+
+  // Transform data into the format expected by DischargePrintView
+  const dischargeData: PatientData | null = useMemo(() => {
+    if (!selectedPatientId) return null;
+
+    const patient = patients.find((p: any) => p._id === selectedPatientId);
+    if (!patient) return null;
+
+    // Get initial and final prakriti assessments
+    const sortedPrakriti = [...prakritiAssessments].sort((a: any, b: any) => {
+      const dateA = a.created_at || a.createdAt || "";
+      const dateB = b.created_at || b.createdAt || "";
+      return new Date(dateA).getTime() - new Date(dateB).getTime();
+    });
+
+    const initialPrakriti = sortedPrakriti[0] || { vata: 0, pitta: 0, kapha: 0 };
+    const finalPrakriti = sortedPrakriti[sortedPrakriti.length - 1] || initialPrakriti;
+
+    // Transform treatment journey to treatment plan
+    const sortedJourney = [...treatmentJourney].sort((a: any, b: any) => a.day - b.day);
+    const treatmentPlan = sortedJourney.map((day: any) => ({
+      day: day.day,
+      therapy: day.therapy_name || day.therapy || "Not specified",
+      completed: day.completed || day.status === "completed",
+    }));
+
+    // Calculate admission and discharge dates
+    const admissionDate = patient.admission_date || patient.created_at || patient.createdAt || new Date().toISOString();
+    const dischargeDate = new Date().toISOString();
+    const admissionDateObj = new Date(admissionDate);
+    const dischargeDateObj = new Date(dischargeDate);
+
+    // Generate diet advice based on prakriti (simplified - in real app, this would come from backend)
+    const dominantDosha = finalPrakriti.vata >= finalPrakriti.pitta && finalPrakriti.vata >= finalPrakriti.kapha
+      ? "Vata"
+      : finalPrakriti.pitta >= finalPrakriti.kapha
+      ? "Pitta"
+      : "Kapha";
+
+    const dietAdviceMap: Record<string, string[]> = {
+      Vata: [
+        "Follow Vata-pacifying diet for 2 weeks",
+        "Prefer warm, cooked, moist foods",
+        "Avoid cold, raw, and dry foods",
+        "Include ghee, sesame oil in cooking",
+        "Drink warm water throughout the day",
+        "Have dinner before 7 PM",
+        "Avoid caffeine and carbonated drinks",
+      ],
+      Pitta: [
+        "Follow Pitta-pacifying diet for 3 weeks",
+        "Prefer cooling foods like cucumber, coconut",
+        "Avoid spicy, sour, and fermented foods",
+        "Include bitter gourd, neem in diet",
+        "Drink cooling herbal teas",
+        "Avoid direct sun exposure",
+        "Practice stress management techniques",
+      ],
+      Kapha: [
+        "Follow Kapha-pacifying diet for 2 weeks",
+        "Prefer light, warm, and dry foods",
+        "Avoid heavy, oily, and sweet foods",
+        "Include ginger, turmeric in diet",
+        "Drink warm water with honey",
+        "Engage in regular physical activity",
+        "Avoid daytime sleep",
+      ],
+    };
+
+    const dietAdvice = dietAdviceMap[dominantDosha] || dietAdviceMap["Vata"];
+
+    // Generate follow-up instructions
+    const followUp = `Follow-up consultation after 2 weeks. Continue prescribed medications and follow the ${dominantDosha}-pacifying diet. Monitor your progress and report any concerns.`;
+
+    return {
+      id: 1,
+      name: patient.name || "Patient",
+      age: patient.age || 0,
+      gender: patient.gender || "Not specified",
+      contact: patient.phone || patient.contact || "Not provided",
+      bloodGroup: patient.blood_group || patient.bloodGroup || "Not specified",
+      admissionDate: admissionDateObj.toISOString().split('T')[0],
+      dischargeDate: dischargeDateObj.toISOString().split('T')[0],
+      diagnosis: patient.diagnosis || patient.chief_complaint || "Not specified",
+      treatingDoctor: patient.treating_doctor || patient.treatingDoctor || "Dr. Ayurveda",
+      initialPrakriti: {
+        vata: initialPrakriti.vata || 0,
+        pitta: initialPrakriti.pitta || 0,
+        kapha: initialPrakriti.kapha || 0,
+      },
+      finalPrakriti: {
+        vata: finalPrakriti.vata || 0,
+        pitta: finalPrakriti.pitta || 0,
+        kapha: finalPrakriti.kapha || 0,
+      },
+      treatmentPlan,
+      dietAdvice,
+      followUp,
+    };
+  }, [selectedPatientId, patients, prakritiAssessments, treatmentJourney]);
 
   const generatePDF = async () => {
-    if (!printRef.current || !selectedPatient) return;
+    if (!printRef.current || !dischargeData) return;
 
     setIsGenerating(true);
     try {
@@ -160,9 +223,11 @@ export default function DischargeSummary() {
         heightLeft -= pageHeight;
       }
 
-      pdf.save(`Discharge_Summary_${selectedPatient.name.replace(/\s+/g, "_")}.pdf`);
+      pdf.save(`Discharge_Summary_${dischargeData.name.replace(/\s+/g, "_")}.pdf`);
+      toast.success("PDF generated successfully");
     } catch (error) {
       console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF");
     } finally {
       setIsGenerating(false);
     }
@@ -176,7 +241,7 @@ export default function DischargeSummary() {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Discharge Summary - ${selectedPatient?.name}</title>
+            <title>Discharge Summary - ${dischargeData?.name}</title>
             <style>
               body { font-family: 'Inter', sans-serif; padding: 20px; }
               .print-container { max-width: 800px; margin: 0 auto; }
@@ -191,6 +256,8 @@ export default function DischargeSummary() {
       printWindow.print();
     }
   };
+
+  const isLoading = loadingPatients || (selectedPatientId && (loadingPrakriti || loadingJourney));
 
   return (
     <MainLayout>
@@ -215,17 +282,35 @@ export default function DischargeSummary() {
                 <SelectValue placeholder="Select patient" />
               </SelectTrigger>
               <SelectContent>
-                {patientsData.map((p) => (
-                  <SelectItem key={p.id} value={p.id.toString()}>
-                    {p.name} ({p.treatmentPlan.length} days)
-                  </SelectItem>
-                ))}
+                {patients.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    No patients available
+                  </div>
+                ) : (
+                  patients.map((p: any) => (
+                    <SelectItem key={p._id} value={p._id}>
+                      {p.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
         </motion.div>
 
-        {!selectedPatient ? (
+        {isLoading ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-card rounded-2xl border border-border p-12 text-center"
+          >
+            <Loader2 className="w-16 h-16 mx-auto text-primary animate-spin mb-4" />
+            <h3 className="font-display text-xl font-semibold mb-2">Loading Patient Data</h3>
+            <p className="text-muted-foreground">
+              Fetching discharge summary information...
+            </p>
+          </motion.div>
+        ) : !selectedPatientId ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -235,6 +320,18 @@ export default function DischargeSummary() {
             <h3 className="font-display text-xl font-semibold mb-2">Select a Patient</h3>
             <p className="text-muted-foreground">
               Choose a patient to generate their discharge summary
+            </p>
+          </motion.div>
+        ) : !dischargeData ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-card rounded-2xl border border-border p-12 text-center"
+          >
+            <AlertTriangle className="w-16 h-16 mx-auto text-destructive/30 mb-4" />
+            <h3 className="font-display text-xl font-semibold mb-2">Patient Not Found</h3>
+            <p className="text-muted-foreground">
+              Unable to load patient data. Please try selecting another patient.
             </p>
           </motion.div>
         ) : (
@@ -277,7 +374,7 @@ export default function DischargeSummary() {
               </div>
               <div className="p-6 bg-muted/10 overflow-auto max-h-[800px]">
                 <div ref={printRef}>
-                  <DischargePrintView patient={selectedPatient} />
+                  <DischargePrintView patient={dischargeData} />
                 </div>
               </div>
             </motion.div>

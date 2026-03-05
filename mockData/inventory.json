@@ -1,0 +1,82 @@
+[
+  {
+    "item_name": "Dhanwantaram Tailam",
+    "category": "Tailam",
+    "quantity": 50,
+    "unit": "liters",
+    "min_stock_level": 10,
+    "last_restocked_at": "2024-01-05T00:00:00.000Z"
+  },
+  {
+    "item_name": "Ksheerabala Tailam",
+    "category": "Tailam",
+    "quantity": 45,
+    "unit": "liters",
+    "min_stock_level": 10,
+    "last_restocked_at": "2024-01-10T00:00:00.000Z"
+  },
+  {
+    "item_name": "Mahamasha Tailam",
+    "category": "Tailam",
+    "quantity": 28,
+    "unit": "liters",
+    "min_stock_level": 10,
+    "last_restocked_at": "2024-01-08T00:00:00.000Z"
+  },
+  {
+    "item_name": "Triphala Churna",
+    "category": "Churna",
+    "quantity": 25,
+    "unit": "kg",
+    "min_stock_level": 5,
+    "last_restocked_at": "2024-01-03T00:00:00.000Z"
+  },
+  {
+    "item_name": "Ashwagandha Churna",
+    "category": "Churna",
+    "quantity": 72,
+    "unit": "kg",
+    "min_stock_level": 10,
+    "last_restocked_at": "2024-01-12T00:00:00.000Z"
+  },
+  {
+    "item_name": "Trikatu Churna",
+    "category": "Churna",
+    "quantity": 35,
+    "unit": "kg",
+    "min_stock_level": 10,
+    "last_restocked_at": "2024-01-07T00:00:00.000Z"
+  },
+  {
+    "item_name": "Dasamoola Kashayam",
+    "category": "Kashayam",
+    "quantity": 62,
+    "unit": "liters",
+    "min_stock_level": 15,
+    "last_restocked_at": "2024-01-09T00:00:00.000Z"
+  },
+  {
+    "item_name": "Rasnadi Kashayam",
+    "category": "Kashayam",
+    "quantity": 12,
+    "unit": "liters",
+    "min_stock_level": 10,
+    "last_restocked_at": "2024-01-04T00:00:00.000Z"
+  },
+  {
+    "item_name": "Brahmi Gulika",
+    "category": "Gulika",
+    "quantity": 88,
+    "unit": "bottles",
+    "min_stock_level": 20,
+    "last_restocked_at": "2024-01-11T00:00:00.000Z"
+  },
+  {
+    "item_name": "Dasamoolarishtam",
+    "category": "Arishtam",
+    "quantity": 55,
+    "unit": "liters",
+    "min_stock_level": 15,
+    "last_restocked_at": "2024-01-06T00:00:00.000Z"
+  }
+]

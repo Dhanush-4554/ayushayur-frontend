@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Plus, Clock, User, MapPin, X, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, X, AlertTriangle, Loader2 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -12,44 +12,49 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { appointmentsAPI, therapiesAPI, roomsAPI, therapistsAPI, patientsAPI } from "@/lib/api";
+import { toast } from "sonner";
 
 interface Appointment {
-  id: number;
-  time: string;
-  endTime: string;
-  therapy: string;
-  patient: string;
-  patientGender: string;
-  therapist: string;
-  therapistGender: string;
-  room: string;
-  duration: number;
-  day: number;
+  _id?: string;
+  id?: string;
+  appointment_date: string;
+  appointment_time: string;
+  end_time?: string;
+  therapy_id?: string;
+  therapy?: { name: string; duration: number; gender_restricted?: boolean };
+  patient_id?: string;
+  patient?: { name: string; gender: string };
+  therapist_id?: string;
+  therapist?: { name: string; gender: string };
+  room_id?: string;
+  room?: { name: string };
+  status?: string;
 }
 
-const therapies = [
-  { name: "Abhyanga", duration: 60, genderRestricted: true },
-  { name: "Shirodhara", duration: 45, genderRestricted: false },
-  { name: "Basti", duration: 90, genderRestricted: true },
-  { name: "Nasya", duration: 30, genderRestricted: false },
-  { name: "Swedana", duration: 45, genderRestricted: false },
-  { name: "Udvartana", duration: 60, genderRestricted: true },
-];
+interface Therapy {
+  _id: string;
+  name: string;
+  duration: number;
+  gender_restricted?: boolean;
+}
 
-const rooms = ["Room 101", "Room 102", "Room 103", "Room 104"];
-const therapists = [
-  { name: "Dr. Anil", gender: "Male" },
-  { name: "Dr. Meera", gender: "Female" },
-  { name: "Dr. Rajan", gender: "Male" },
-  { name: "Dr. Priya", gender: "Female" },
-];
+interface Room {
+  _id: string;
+  name: string;
+}
 
-const patients = [
-  { name: "Rajesh Kumar", gender: "Male" },
-  { name: "Priya Sharma", gender: "Female" },
-  { name: "Amit Verma", gender: "Male" },
-  { name: "Sunita Devi", gender: "Female" },
-];
+interface Therapist {
+  _id: string;
+  name: string;
+  gender: string;
+}
+
+interface Patient {
+  _id: string;
+  name: string;
+  gender: string;
+}
 
 const timeSlots = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -58,29 +63,72 @@ const timeSlots = [
 
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const mockAppointments: Appointment[] = [
-  { id: 1, time: "09:00", endTime: "10:00", therapy: "Abhyanga", patient: "Rajesh Kumar", patientGender: "Male", therapist: "Dr. Anil", therapistGender: "Male", room: "Room 101", duration: 60, day: 0 },
-  { id: 2, time: "10:30", endTime: "11:15", therapy: "Shirodhara", patient: "Priya Sharma", patientGender: "Female", therapist: "Dr. Meera", therapistGender: "Female", room: "Room 102", duration: 45, day: 0 },
-  { id: 3, time: "14:00", endTime: "15:30", therapy: "Basti", patient: "Amit Verma", patientGender: "Male", therapist: "Dr. Rajan", therapistGender: "Male", room: "Room 103", duration: 90, day: 1 },
-  { id: 4, time: "09:30", endTime: "10:00", therapy: "Nasya", patient: "Sunita Devi", patientGender: "Female", therapist: "Dr. Priya", therapistGender: "Female", room: "Room 101", duration: 30, day: 2 },
-];
-
 export default function Scheduler() {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments);
   const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ day: number; time: string } | null>(null);
   const [conflict, setConflict] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   
   const [newAppointment, setNewAppointment] = useState({
-    therapy: "",
-    patient: "",
-    therapist: "",
-    room: "",
+    therapy_id: "",
+    patient_id: "",
+    therapist_id: "",
+    room_id: "",
     time: "",
     day: 0,
   });
 
+  // Fetch all data
+  const { data: therapies = [], isLoading: loadingTherapies } = useQuery({
+    queryKey: ["therapies"],
+    queryFn: async () => {
+      try {
+        return await therapiesAPI.getAll();
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load therapies");
+        return [];
+      }
+    },
+  });
+
+  const { data: rooms = [], isLoading: loadingRooms } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: async () => {
+      try {
+        return await roomsAPI.getAll();
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load rooms");
+        return [];
+      }
+    },
+  });
+
+  const { data: therapists = [], isLoading: loadingTherapists } = useQuery({
+    queryKey: ["therapists"],
+    queryFn: async () => {
+      try {
+        return await therapistsAPI.getAll();
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load therapists");
+        return [];
+      }
+    },
+  });
+
+  const { data: patients = [], isLoading: loadingPatients } = useQuery({
+    queryKey: ["patients"],
+    queryFn: async () => {
+      try {
+        return await patientsAPI.getAll();
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load patients");
+        return [];
+      }
+    },
+  });
+
+  // Get week date range
   const getWeekDates = () => {
     const dates = [];
     const start = new Date(currentWeekStart);
@@ -95,6 +143,44 @@ export default function Scheduler() {
   };
 
   const weekDates = getWeekDates();
+  const weekStartDate = weekDates[0];
+  const weekEndDate = weekDates[5];
+
+  // Fetch appointments for the current week
+  const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
+    queryKey: ["appointments", weekStartDate.toISOString().split('T')[0], weekEndDate.toISOString().split('T')[0]],
+    queryFn: async () => {
+      try {
+        const allAppointments = await appointmentsAPI.getAll();
+        // Filter appointments for the current week
+        return allAppointments.filter((apt: Appointment) => {
+          if (!apt.appointment_date) return false;
+          const aptDate = new Date(apt.appointment_date);
+          return aptDate >= weekStartDate && aptDate <= weekEndDate;
+        });
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load appointments");
+        return [];
+      }
+    },
+  });
+
+  // Create appointment mutation
+  const createAppointmentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await appointmentsAPI.create(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      toast.success("Appointment scheduled successfully");
+      setShowAddModal(false);
+      setNewAppointment({ therapy_id: "", patient_id: "", therapist_id: "", room_id: "", time: "", day: 0 });
+      setConflict(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Failed to schedule appointment");
+    },
+  });
 
   const navigateWeek = (direction: number) => {
     const newDate = new Date(currentWeekStart);
@@ -103,41 +189,58 @@ export default function Scheduler() {
   };
 
   const getAppointmentsForSlot = (day: number, time: string) => {
-    return appointments.filter(
-      (apt) => apt.day === day && apt.time === time
-    );
+    const date = weekDates[day];
+    const dateStr = date.toISOString().split('T')[0];
+    
+    return appointments.filter((apt: Appointment) => {
+      const aptDate = apt.appointment_date ? new Date(apt.appointment_date).toISOString().split('T')[0] : '';
+      const aptTime = apt.appointment_time?.substring(0, 5) || '';
+      return aptDate === dateStr && aptTime === time;
+    });
   };
 
   const checkConflicts = () => {
-    const selectedTherapy = therapies.find(t => t.name === newAppointment.therapy);
-    const selectedPatient = patients.find(p => p.name === newAppointment.patient);
-    const selectedTherapist = therapists.find(t => t.name === newAppointment.therapist);
+    const selectedTherapy = therapies.find((t: Therapy) => t._id === newAppointment.therapy_id);
+    const selectedPatient = patients.find((p: Patient) => p._id === newAppointment.patient_id);
+    const selectedTherapist = therapists.find((t: Therapist) => t._id === newAppointment.therapist_id);
 
     // Check gender restriction
-    if (selectedTherapy?.genderRestricted && selectedPatient && selectedTherapist) {
+    if (selectedTherapy?.gender_restricted && selectedPatient && selectedTherapist) {
       if (selectedPatient.gender !== selectedTherapist.gender) {
         return `${selectedTherapy.name} requires same-gender therapist. Please assign a ${selectedPatient.gender.toLowerCase()} therapist.`;
       }
     }
 
     // Check room availability
+    const date = weekDates[newAppointment.day];
+    const dateStr = date.toISOString().split('T')[0];
     const existingRoomAppointment = appointments.find(
-      apt => apt.day === newAppointment.day && 
-             apt.time === newAppointment.time && 
-             apt.room === newAppointment.room
+      (apt: Appointment) => {
+        const aptDate = apt.appointment_date ? new Date(apt.appointment_date).toISOString().split('T')[0] : '';
+        const aptTime = apt.appointment_time?.substring(0, 5) || '';
+        return aptDate === dateStr && 
+               aptTime === newAppointment.time && 
+               apt.room_id === newAppointment.room_id;
+      }
     );
     if (existingRoomAppointment) {
-      return `${newAppointment.room} is already booked at this time.`;
+      const roomName = rooms.find((r: Room) => r._id === newAppointment.room_id)?.name || "Room";
+      return `${roomName} is already booked at this time.`;
     }
 
     // Check therapist availability
     const existingTherapistAppointment = appointments.find(
-      apt => apt.day === newAppointment.day && 
-             apt.time === newAppointment.time && 
-             apt.therapist === newAppointment.therapist
+      (apt: Appointment) => {
+        const aptDate = apt.appointment_date ? new Date(apt.appointment_date).toISOString().split('T')[0] : '';
+        const aptTime = apt.appointment_time?.substring(0, 5) || '';
+        return aptDate === dateStr && 
+               aptTime === newAppointment.time && 
+               apt.therapist_id === newAppointment.therapist_id;
+      }
     );
     if (existingTherapistAppointment) {
-      return `${newAppointment.therapist} is already scheduled at this time.`;
+      const therapistName = selectedTherapist?.name || "Therapist";
+      return `${therapistName} is already scheduled at this time.`;
     }
 
     return null;
@@ -150,44 +253,53 @@ export default function Scheduler() {
     setConflict(null);
   };
 
-  const handleAddAppointment = () => {
+  const handleAddAppointment = async () => {
     const conflictMessage = checkConflicts();
     if (conflictMessage) {
       setConflict(conflictMessage);
       return;
     }
 
-    const selectedTherapy = therapies.find(t => t.name === newAppointment.therapy);
-    const selectedPatient = patients.find(p => p.name === newAppointment.patient);
-    const selectedTherapist = therapists.find(t => t.name === newAppointment.therapist);
+    const selectedTherapy = therapies.find((t: Therapy) => t._id === newAppointment.therapy_id);
+    const date = weekDates[newAppointment.day];
+    const dateStr = date.toISOString().split('T')[0];
 
-    if (selectedTherapy && selectedPatient && selectedTherapist) {
+    if (selectedTherapy) {
       const [hours, minutes] = newAppointment.time.split(':').map(Number);
       const endMinutes = hours * 60 + minutes + selectedTherapy.duration;
       const endHours = Math.floor(endMinutes / 60);
       const endMins = endMinutes % 60;
-      const endTime = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}:00`;
 
-      const appointment: Appointment = {
-        id: appointments.length + 1,
-        time: newAppointment.time,
-        endTime,
-        therapy: newAppointment.therapy,
-        patient: newAppointment.patient,
-        patientGender: selectedPatient.gender,
-        therapist: newAppointment.therapist,
-        therapistGender: selectedTherapist.gender,
-        room: newAppointment.room,
-        duration: selectedTherapy.duration,
-        day: newAppointment.day,
+      const appointmentData = {
+        appointment_date: dateStr,
+        appointment_time: `${newAppointment.time}:00`,
+        end_time: endTime,
+        therapy_id: newAppointment.therapy_id,
+        patient_id: newAppointment.patient_id,
+        therapist_id: newAppointment.therapist_id,
+        room_id: newAppointment.room_id,
+        status: "scheduled",
       };
 
-      setAppointments([...appointments, appointment]);
-      setShowAddModal(false);
-      setNewAppointment({ therapy: "", patient: "", therapist: "", room: "", time: "", day: 0 });
-      setConflict(null);
+      createAppointmentMutation.mutate(appointmentData);
     }
   };
+
+  const isLoading = loadingTherapies || loadingRooms || loadingTherapists || loadingPatients || loadingAppointments;
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading scheduler...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -270,18 +382,23 @@ export default function Scheduler() {
                       onClick={() => handleSlotClick(dayIndex, time)}
                       className="p-1 border-r border-border last:border-r-0 min-h-[60px] hover:bg-muted/30 cursor-pointer transition-colors"
                     >
-                      {slotAppointments.map((apt) => (
-                        <motion.div
-                          key={apt.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="p-2 rounded-lg bg-primary/20 border border-primary/30 text-xs mb-1"
-                        >
-                          <p className="font-semibold text-primary truncate">{apt.therapy}</p>
-                          <p className="text-muted-foreground truncate">{apt.patient}</p>
-                          <p className="text-muted-foreground/70 truncate">{apt.room}</p>
-                        </motion.div>
-                      ))}
+                      {slotAppointments.map((apt: Appointment) => {
+                        const therapyName = apt.therapy?.name || apt.therapy_id || "Therapy";
+                        const patientName = apt.patient?.name || apt.patient_id || "Patient";
+                        const roomName = apt.room?.name || apt.room_id || "Room";
+                        return (
+                          <motion.div
+                            key={apt._id || apt.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="p-2 rounded-lg bg-primary/20 border border-primary/30 text-xs mb-1"
+                          >
+                            <p className="font-semibold text-primary truncate">{therapyName}</p>
+                            <p className="text-muted-foreground truncate">{patientName}</p>
+                            <p className="text-muted-foreground/70 truncate">{roomName}</p>
+                          </motion.div>
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -291,19 +408,21 @@ export default function Scheduler() {
         </motion.div>
 
         {/* Legend */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-wrap gap-4"
-        >
-          {therapies.slice(0, 4).map((therapy) => (
-            <div key={therapy.name} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="w-3 h-3 rounded-full bg-primary/40" />
-              <span>{therapy.name} ({therapy.duration}min)</span>
-            </div>
-          ))}
-        </motion.div>
+        {therapies.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex flex-wrap gap-4"
+          >
+            {therapies.slice(0, 4).map((therapy: Therapy) => (
+              <div key={therapy._id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-3 h-3 rounded-full bg-primary/40" />
+                <span>{therapy.name} ({therapy.duration}min)</span>
+              </div>
+            ))}
+          </motion.div>
+        )}
       </div>
 
       {/* Add Appointment Modal */}
@@ -358,17 +477,17 @@ export default function Scheduler() {
                 <div>
                   <Label>Therapy</Label>
                   <Select
-                    value={newAppointment.therapy}
-                    onValueChange={(value) => setNewAppointment({ ...newAppointment, therapy: value })}
+                    value={newAppointment.therapy_id}
+                    onValueChange={(value) => setNewAppointment({ ...newAppointment, therapy_id: value })}
                   >
                     <SelectTrigger className="mt-1.5 rounded-xl">
                       <SelectValue placeholder="Select therapy" />
                     </SelectTrigger>
                     <SelectContent>
-                      {therapies.map((therapy) => (
-                        <SelectItem key={therapy.name} value={therapy.name}>
+                      {therapies.map((therapy: Therapy) => (
+                        <SelectItem key={therapy._id} value={therapy._id}>
                           {therapy.name} ({therapy.duration}min)
-                          {therapy.genderRestricted && " ⚠️"}
+                          {therapy.gender_restricted && " ⚠️"}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -378,15 +497,15 @@ export default function Scheduler() {
                 <div>
                   <Label>Patient</Label>
                   <Select
-                    value={newAppointment.patient}
-                    onValueChange={(value) => setNewAppointment({ ...newAppointment, patient: value })}
+                    value={newAppointment.patient_id}
+                    onValueChange={(value) => setNewAppointment({ ...newAppointment, patient_id: value })}
                   >
                     <SelectTrigger className="mt-1.5 rounded-xl">
                       <SelectValue placeholder="Select patient" />
                     </SelectTrigger>
                     <SelectContent>
-                      {patients.map((patient) => (
-                        <SelectItem key={patient.name} value={patient.name}>
+                      {patients.map((patient: Patient) => (
+                        <SelectItem key={patient._id} value={patient._id}>
                           {patient.name} ({patient.gender})
                         </SelectItem>
                       ))}
@@ -397,15 +516,15 @@ export default function Scheduler() {
                 <div>
                   <Label>Therapist</Label>
                   <Select
-                    value={newAppointment.therapist}
-                    onValueChange={(value) => setNewAppointment({ ...newAppointment, therapist: value })}
+                    value={newAppointment.therapist_id}
+                    onValueChange={(value) => setNewAppointment({ ...newAppointment, therapist_id: value })}
                   >
                     <SelectTrigger className="mt-1.5 rounded-xl">
                       <SelectValue placeholder="Select therapist" />
                     </SelectTrigger>
                     <SelectContent>
-                      {therapists.map((therapist) => (
-                        <SelectItem key={therapist.name} value={therapist.name}>
+                      {therapists.map((therapist: Therapist) => (
+                        <SelectItem key={therapist._id} value={therapist._id}>
                           {therapist.name} ({therapist.gender})
                         </SelectItem>
                       ))}
@@ -416,15 +535,15 @@ export default function Scheduler() {
                 <div>
                   <Label>Room</Label>
                   <Select
-                    value={newAppointment.room}
-                    onValueChange={(value) => setNewAppointment({ ...newAppointment, room: value })}
+                    value={newAppointment.room_id}
+                    onValueChange={(value) => setNewAppointment({ ...newAppointment, room_id: value })}
                   >
                     <SelectTrigger className="mt-1.5 rounded-xl">
                       <SelectValue placeholder="Select room" />
                     </SelectTrigger>
                     <SelectContent>
-                      {rooms.map((room) => (
-                        <SelectItem key={room} value={room}>{room}</SelectItem>
+                      {rooms.map((room: Room) => (
+                        <SelectItem key={room._id} value={room._id}>{room.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -433,9 +552,9 @@ export default function Scheduler() {
                 <Button
                   onClick={handleAddAppointment}
                   className="w-full mt-4 rounded-xl h-11 bg-primary text-primary-foreground hover:bg-primary/90"
-                  disabled={!newAppointment.therapy || !newAppointment.patient || !newAppointment.therapist || !newAppointment.room}
+                  disabled={!newAppointment.therapy_id || !newAppointment.patient_id || !newAppointment.therapist_id || !newAppointment.room_id || createAppointmentMutation.isPending}
                 >
-                  Schedule Appointment
+                  {createAppointmentMutation.isPending ? "Scheduling..." : "Schedule Appointment"}
                 </Button>
               </div>
             </motion.div>

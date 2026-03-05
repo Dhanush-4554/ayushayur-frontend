@@ -49,6 +49,17 @@ async function apiRequest<T>(
         // If response is not JSON, use status text
         errorMessage = response.statusText || errorMessage;
       }
+      
+      // Handle 401 Unauthorized - clear token if invalid
+      if (response.status === 401) {
+        const token = getToken();
+        if (token) {
+          // Token exists but is invalid - clear it
+          localStorage.removeItem('token');
+          console.warn('Authentication token invalid or expired. Token cleared.');
+        }
+      }
+      
       throw new Error(errorMessage);
     }
 
